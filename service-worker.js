@@ -1,13 +1,31 @@
 // A generic onclick callback function.
 chrome.contextMenus.onClicked.addListener(genericOnClick);
 
+function sendReload(tab, retryTime = 3) {
+  chrome.tabs.sendMessage(tab.id, { event: "reload" }).then((res) => {
+    if (retryTime < 1) {
+      console.warn("重试次数为0，停止跳转");
+      return;
+    }
+    const { status } = res;
+    if (status === "done") {
+      console.log(`页面已成功跳转，不再重试（剩余次数${retryTime}）`);
+    } else {
+      console.log("页面未跳转，将在 3s 后重新检测，剩余次数", retryTime);
+      setTimeout(() => {
+        sendReload(tab, retryTime - 1);
+      }, 3000);
+    }
+  });
+}
+
 // A generic onclick callback function.
 function genericOnClick(info, tab) {
   switch (info.menuItemId) {
     case "reload":
       // Radio item function
       console.log("reload item clicked. Status:", { info, tab });
-      chrome.tabs.sendMessage(tab.id, { event: "reload" });
+      sendReload(tab, 3);
       break;
     default:
       // Standard context menu item function

@@ -31,16 +31,20 @@ function jumpPage(target) {
   });
 }
 
+function isPageJumped(domain = REMOVE_DOMAIN) {
+  return location.href.indexOf(domain) === -1;
+}
+
 /**
  * reload page every 3s and check if it works
  * @param {*} target
  * @param {*} domain
  * @param {*} retryTime
  */
-async function removeAndReload(target, domain = REMOVE_DOMAIN, retryTime = 3) {
+async function removeAndReload(target, retryTime = 3) {
   while (retryTime--) {
     // jump success
-    if (location.href.indexOf(domain) === -1) {
+    if (isPageJumped()) {
       break;
     }
     console.log("尝试清除并刷新，剩余次数", retryTime);
@@ -67,6 +71,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       : "from the extension"
   );
   if (request.event === "reload") {
-    main();
+    if (isPageJumped()) {
+      sendResponse({
+        status: "done",
+      });
+    } else {
+      main();
+      sendResponse({
+        status: "processing",
+      });
+    }
   }
 });
